@@ -1,0 +1,17 @@
+{
+  "editor.formatOnSave": true,
+
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true
+  },
+
+  "search.exclude": {
+    "**/bin": true,
+    "**/obj": true
+  }
+}
