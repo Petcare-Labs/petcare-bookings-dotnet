@@ -43,19 +43,29 @@ public sealed class BookingsController : ControllerBase
             return result.Error switch
             {
                 CreateBookingError.CustomerNotFound =>
-                    NotFound("Customer was not found."),
+                    Problem(
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Customer not found",
+                        detail: "The requested customer does not exist."),
 
                 CreateBookingError.ProviderNotFound =>
-                    NotFound("Provider was not found."),
+                    Problem(
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Provider not found",
+                        detail: "The requested provider does not exist."),
 
                 CreateBookingError.PetNotFoundOrDoesNotBelongToCustomer =>
-                    BadRequest(
-                        "Pet was not found or does not belong to the customer."),
+                    Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid pet",
+                        detail: "The pet does not exist or does not belong to the customer."),
 
                 CreateBookingError.ProviderHasOverlappingBooking =>
-                    Conflict(
-                        "The provider already has a booking during the requested time."),
-                        
+                    Problem(
+                        statusCode: StatusCodes.Status409Conflict,
+                        title: "Booking conflict",
+                        detail: "The provider already has a booking during the requested time."),
+
                 _ => Problem()
             };
         }
@@ -134,23 +144,27 @@ public sealed class BookingsController : ControllerBase
         [FromQuery] Guid? customerId,
         [FromQuery] Guid? providerId,
         [FromQuery] BookingStatus? status,
+        [FromQuery] int pageNumber,
+        [FromQuery] int pageSize,
         GetBookingsHandler handler,
         CancellationToken cancellationToken)
     {
-        var query = new GetBookingsQuery(customerId, providerId, status);
+        pageNumber = Math.Max(pageNumber, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var query = new GetBookingsQuery(customerId, providerId, status, pageNumber, pageSize);
 
         var bookings = await handler.HandleAsync(query, cancellationToken);
 
-        var response =
-            bookings
-                .Select(x => new BookingSummaryResponse(
-                    x.Id,
-                    x.PetName,
-                    x.ProviderName,
-                    x.StartTime,
-                    x.EndTime,
-                    x.Status))
-                .ToList();
+        var response = bookings
+            .Select(x => new BookingSummaryResponse(
+                x.Id,
+                x.PetName,
+                x.ProviderName,
+                x.StartTime,
+                x.EndTime,
+                x.Status))
+            .ToList();
 
         return Ok(response);
     }

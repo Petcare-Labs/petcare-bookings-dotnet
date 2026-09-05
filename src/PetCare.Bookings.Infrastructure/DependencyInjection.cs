@@ -22,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<IBookingReadStore, BookingReadStore>();
         
         services.AddScoped<DevelopmentDataSeeder>();
+
         return services;
     }
 }

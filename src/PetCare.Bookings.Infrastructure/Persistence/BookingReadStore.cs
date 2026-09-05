@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PetCare.Bookings.Application.Abstractions.Persistence;
 using PetCare.Bookings.Application.Bookings.Common;
+using PetCare.Bookings.Application.Common.Pagination;
 using PetCare.Bookings.Domain.Enums;
 
 namespace PetCare.Bookings.Infrastructure.Persistence;
@@ -28,8 +29,8 @@ public sealed class BookingReadStore(
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<BookingSummary>> GetAsync(Guid? customerId = null, Guid? providerId = null,
-        BookingStatus? status = null, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<BookingSummary>> GetAsync(Guid? customerId, Guid? providerId,
+        BookingStatus? status, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = dbContext.Bookings
             .AsNoTracking()
@@ -50,8 +51,12 @@ public sealed class BookingReadStore(
             query = query.Where(x => x.Status == status.Value);
         }
 
-        return await query
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
             .OrderBy(x => x.StartTime)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .Select(x => new BookingSummary(
                 x.Id,
                 x.Pet.Name,
@@ -60,5 +65,7 @@ public sealed class BookingReadStore(
                 x.EndTime,
                 x.Status))
             .ToListAsync(cancellationToken);
+
+        return new PagedResult<BookingSummary>(items, pageNumber, pageSize, totalCount);
     }
 }

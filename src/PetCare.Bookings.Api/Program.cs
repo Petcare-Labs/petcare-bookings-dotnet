@@ -14,6 +14,7 @@ builder.Services
     });
 
 builder.Services.AddOpenApi();
+builder.Services.AddProblemDetails();
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -34,6 +35,8 @@ if (app.Environment.IsDevelopment())
 
     app.MapOpenApi();
 }
+
+app.UseExceptionHandler();
 
 app.UseHttpsRedirection();
 
