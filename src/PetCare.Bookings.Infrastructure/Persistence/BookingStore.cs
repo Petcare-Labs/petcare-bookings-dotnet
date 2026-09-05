@@ -43,6 +43,14 @@ public sealed class BookingStore(ApplicationDbContext dbContext) : IBookingStore
             cancellationToken);
     }   
 
+    public Task<Booking?> GetByIdAsync(Guid bookingId, CancellationToken cancellationToken = default)
+    {
+        return dbContext.Bookings
+            .FirstOrDefaultAsync(
+                x => x.Id == bookingId,
+                cancellationToken);
+    }
+
     public async Task AddAsync(Booking booking, CancellationToken cancellationToken = default)
     {
         await dbContext.Bookings.AddAsync(booking, cancellationToken);

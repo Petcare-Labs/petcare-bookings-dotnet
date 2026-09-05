@@ -1,7 +1,9 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using PetCare.Bookings.Api.Contracts.Bookings;
+using PetCare.Bookings.Application.Bookings.ChangeBookingStatus;
 using PetCare.Bookings.Application.Bookings.CreateBooking;
+using PetCare.Bookings.Domain.Enums;
 
 namespace PetCare.Bookings.Api.Controllers;
 
@@ -59,5 +61,70 @@ public sealed class BookingsController : ControllerBase
         var response = new CreateBookingResponse(result.BookingId!.Value, result.Status!.Value);
 
         return Created($"/api/bookings/{response.Id}", response);
+    }
+
+    [HttpPost("{id:guid}/confirm")]
+    public Task<ActionResult<BookingStatusResponse>> ConfirmAsync(Guid id, ChangeBookingStatusHandler handler, CancellationToken cancellationToken)
+    {
+        return ChangeStatusAsync(
+            id,
+            BookingStatus.Confirmed,
+            handler,
+            cancellationToken);
+    }
+
+    [HttpPost("{id:guid}/start")]
+    public Task<ActionResult<BookingStatusResponse>> StartAsync(Guid id, ChangeBookingStatusHandler handler, CancellationToken cancellationToken)
+    {
+        return ChangeStatusAsync(
+            id,
+            BookingStatus.InProgress,
+            handler,
+            cancellationToken);
+    }
+
+    [HttpPost("{id:guid}/complete")]
+    public Task<ActionResult<BookingStatusResponse>> CompleteAsync(Guid id, ChangeBookingStatusHandler handler, CancellationToken cancellationToken)
+    {
+        return ChangeStatusAsync(
+            id,
+            BookingStatus.Completed,
+            handler,
+            cancellationToken);
+    }
+
+    [HttpPost("{id:guid}/cancel")]
+    public Task<ActionResult<BookingStatusResponse>> CancelAsync(Guid id, ChangeBookingStatusHandler handler, CancellationToken cancellationToken)
+    {
+        return ChangeStatusAsync(
+            id,
+            BookingStatus.Cancelled,
+            handler,
+            cancellationToken);
+    }
+
+
+    private async Task<ActionResult<BookingStatusResponse>> ChangeStatusAsync(Guid bookingId, BookingStatus targetStatus, ChangeBookingStatusHandler handler, CancellationToken cancellationToken)
+    {
+        var command = new ChangeBookingStatusCommand(bookingId, targetStatus);
+
+        var result = await handler.HandleAsync(command, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return result.Error switch
+            {
+                ChangeBookingStatusError.BookingNotFound =>
+                    NotFound("Booking was not found."),
+
+                ChangeBookingStatusError.InvalidTransition =>
+                    Conflict(
+                        $"Booking cannot transition to {targetStatus}."),
+
+                _ => Problem()
+            };
+        }
+
+        return Ok(new BookingStatusResponse(result.BookingId!.Value, result.Status!.Value));
     }
 }
