@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using PetCare.Bookings.Api.Contracts.Bookings;
 using PetCare.Bookings.Application.Bookings.ChangeBookingStatus;
 using PetCare.Bookings.Application.Bookings.CreateBooking;
+using PetCare.Bookings.Application.Bookings.GetBookingById;
+using PetCare.Bookings.Application.Bookings.GetBookings;
 using PetCare.Bookings.Domain.Enums;
 
 namespace PetCare.Bookings.Api.Controllers;
@@ -103,6 +105,55 @@ public sealed class BookingsController : ControllerBase
             cancellationToken);
     }
 
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<BookingDetailsResponse>> GetByIdAsync(
+        Guid id,
+        GetBookingByIdHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var booking = await handler.HandleAsync(id, cancellationToken);
+
+        if (booking is null) return NotFound();
+
+        return Ok(
+            new BookingDetailsResponse(
+                booking.Id,
+                booking.CustomerId,
+                booking.CustomerName,
+                booking.PetId,
+                booking.PetName,
+                booking.ProviderId,
+                booking.ProviderName,
+                booking.StartTime,
+                booking.EndTime,
+                booking.Status));
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<BookingSummaryResponse>>> GetAsync(
+        [FromQuery] Guid? customerId,
+        [FromQuery] Guid? providerId,
+        [FromQuery] BookingStatus? status,
+        GetBookingsHandler handler,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetBookingsQuery(customerId, providerId, status);
+
+        var bookings = await handler.HandleAsync(query, cancellationToken);
+
+        var response =
+            bookings
+                .Select(x => new BookingSummaryResponse(
+                    x.Id,
+                    x.PetName,
+                    x.ProviderName,
+                    x.StartTime,
+                    x.EndTime,
+                    x.Status))
+                .ToList();
+
+        return Ok(response);
+    }
 
     private async Task<ActionResult<BookingStatusResponse>> ChangeStatusAsync(Guid bookingId, BookingStatus targetStatus, ChangeBookingStatusHandler handler, CancellationToken cancellationToken)
     {
