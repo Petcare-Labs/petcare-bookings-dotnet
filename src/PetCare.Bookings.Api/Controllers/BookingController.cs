@@ -5,6 +5,7 @@ using PetCare.Bookings.Application.Bookings.ChangeBookingStatus;
 using PetCare.Bookings.Application.Bookings.CreateBooking;
 using PetCare.Bookings.Application.Bookings.GetBookingById;
 using PetCare.Bookings.Application.Bookings.GetBookings;
+using PetCare.Bookings.Application.Common.Pagination;
 using PetCare.Bookings.Domain.Enums;
 
 namespace PetCare.Bookings.Api.Controllers;
@@ -140,7 +141,7 @@ public sealed class BookingsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<BookingSummaryResponse>>> GetAsync(
+    public async Task<ActionResult<PagedResult<BookingSummaryResponse>>> GetAsync(
         [FromQuery] Guid? customerId,
         [FromQuery] Guid? providerId,
         [FromQuery] BookingStatus? status,
@@ -156,7 +157,7 @@ public sealed class BookingsController : ControllerBase
 
         var bookings = await handler.HandleAsync(query, cancellationToken);
 
-        var response = bookings
+        var items = bookings.Items
             .Select(x => new BookingSummaryResponse(
                 x.Id,
                 x.PetName,
@@ -165,6 +166,9 @@ public sealed class BookingsController : ControllerBase
                 x.EndTime,
                 x.Status))
             .ToList();
+
+        var response = new PagedResult<BookingSummaryResponse>(items, bookings.PageNumber, bookings.PageSize, bookings.TotalCount);
+
 
         return Ok(response);
     }
