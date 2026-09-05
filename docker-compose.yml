@@ -1,0 +1,29 @@
+services:
+
+  postgres:
+    image: postgres:18-alpine
+    container_name: petcare-bookings-postgres
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-petcare_bookings}
+      POSTGRES_USER: ${POSTGRES_USER:-petcare}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-petcare_dev}
+
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-55432}:5432"
+
+    volumes:
+      - petcare-bookings-postgres:/var/lib/postgresql
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-petcare} -d ${POSTGRES_DB:-petcare_bookings}"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  petcare-bookings-postgres:
