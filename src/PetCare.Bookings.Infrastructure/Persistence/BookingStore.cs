@@ -41,7 +41,7 @@ public sealed class BookingStore(ApplicationDbContext dbContext) : IBookingStore
                 x.StartTime < endTime &&
                 x.EndTime > startTime,
             cancellationToken);
-    }   
+    }
 
     public Task<Booking?> GetByIdAsync(Guid bookingId, CancellationToken cancellationToken = default)
     {
