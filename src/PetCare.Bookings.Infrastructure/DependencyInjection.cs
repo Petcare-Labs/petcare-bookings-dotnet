@@ -19,6 +19,8 @@ public static class DependencyInjection
         services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
 
         services.AddScoped<IBookingStore, BookingStore>();
+        services.AddScoped<IBookingReadStore, BookingReadStore>();
+        
         services.AddScoped<DevelopmentDataSeeder>();
         return services;
     }
