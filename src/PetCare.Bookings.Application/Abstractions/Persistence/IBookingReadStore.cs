@@ -9,9 +9,9 @@ public interface IBookingReadStore
     Task<BookingDetails?> GetByIdAsync(Guid bookingId, CancellationToken cancellationToken = default);
 
     Task<PagedResult<BookingSummary>> GetAsync(
-        Guid? customerId, 
-        Guid? providerId, 
-        BookingStatus? status, 
+        Guid? customerId,
+        Guid? providerId,
+        BookingStatus? status,
         int pageNumber,
         int pageSize,
         CancellationToken cancellationToken = default);
